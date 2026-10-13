@@ -1,0 +1,88 @@
+{% extends "authenticated-base.html" %}
+{% block title %}{{ 'Edit' if form.planID else 'Create' }} Semester Plan — MyAdvisor{% endblock %}
+
+{% block app_nav %}
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('user_home_view') }}">Dashboard</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('progress_view') }}">Degree Progress</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('plans_view') }}">Semester Plans</a>
+</li>
+{% endblock %}
+
+{% block subpage_content %}
+<h1 class="page-title">{{ 'Edit Semester Plan' if form.planID else 'Create Semester Plan' }}</h1>
+
+{% if form.error %}
+<div class="alert alert-danger" role="alert">{{ form.error }}</div>
+{% endif %}
+
+<form method="POST" action="{{ url_for('plan_create_action') }}">
+    {% if form.planID %}
+    <input type="hidden" name="planID" value="{{ form.planID }}">
+    {% endif %}
+    <div class="row g-3 g-lg-5 mb-4">
+        <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="academicYear">Academic Year</label>
+            <select class="form-select" id="academicYear" name="academicYear" required>
+                {% for year in ['2026/2027', '2025/2026', '2024/2025'] %}
+                <option value="{{ year }}" {{ 'selected' if year == form.academicYear }}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+            <label class="form-label" for="semester">Semester</label>
+            <select class="form-select" id="semester" name="semester" required>
+                {% for term in ['1', '2', '3'] %}
+                <option value="{{ term }}" {{ 'selected' if term == form.semester }}>Semester {{ term }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="app-card mb-4">
+        <div class="course-table-wrap" style="max-height: 26rem;">
+            <table class="table mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col" class="text-center" style="width: 5rem;">Select</th>
+                        <th scope="col">Course Code</th>
+                        <th scope="col">Course Title</th>
+                        <th scope="col" class="text-center">Credits</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in form.courses %}
+                    <tr>
+                        <td class="text-center">
+                            <input class="form-check-input" type="checkbox" name="courseIDs"
+                                value="{{ course.courseID }}" id="course-{{ course.courseID }}"
+                                {{ 'checked' if course.courseID in form.selectedCourseIDs }}>
+                        </td>
+                        <td>{{ course.code }}</td>
+                        <td>
+                            {{ course.courseName }}
+                            {% if course.alreadyCompleted %}
+                            <span class="status-badge status-approved ms-1">Completed</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ course.credits }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4">
+        <a class="btn btn-outline-secondary" href="{{ url_for('plans_view') }}">Cancel</a>
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary" type="submit" name="action" value="draft">Save Draft</button>
+            <button class="btn btn-primary" type="submit" name="action" value="submit">Submit</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

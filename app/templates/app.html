@@ -1,9 +1,56 @@
 {% extends "authenticated-base.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}Dashboard — MyAdvisor{% endblock %}
+
+{% block app_nav %}
+<li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('user_home_view') }}">Dashboard</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('progress_view') }}">Degree Progress</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('plans_view') }}">Semester Plans</a>
+</li>
+{% endblock %}
 
 {% block subpage_content %}
-<div class="container-fluid py-2">
-  <h1 class="h4 mb-2">Home</h1>
-  <p class="text-muted mb-0">Workflow screens replace this shell in Phase 5 implement.</p>
+<h1 class="h2 dashboard-greeting">Welcome {{ progress.studentName if progress else user.username }}</h1>
+
+<div class="dashboard-tiles">
+    <div class="dashboard-tile">
+        <span class="tile-icon">
+            <span class="material-symbols-outlined">school</span>
+        </span>
+        <h2>My Degree Progress</h2>
+        <p>
+            View completed courses and credits
+            {% if progress %}
+            <br>{{ progress.degreeName }} &middot; {{ progress.academicYear }}
+            {% endif %}
+        </p>
+        <a class="btn btn-primary" href="{{ url_for('progress_view') }}">View Degree Progress</a>
+    </div>
+
+    <div class="dashboard-tile">
+        <span class="tile-icon">
+            <span class="material-symbols-outlined">event_note</span>
+        </span>
+        <h2>Semester Plans</h2>
+        <p>Create and edit semester plans</p>
+        <a class="btn btn-primary" href="{{ url_for('plan_create_view') }}">Create New Plan</a>
+    </div>
+</div>
+
+<div class="notifications-panel">
+    <h2 class="panel-title">Notifications</h2>
+    {% if notifications %}
+    <ul>
+        {% for note in notifications %}
+        <li>{{ note.message }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">No notifications.</p>
+    {% endif %}
 </div>
 {% endblock %}

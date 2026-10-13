@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Sign in{% endblock %}
+{% block title %}Sign in — MyAdvisor{% endblock %}
 
 {% block content %}
 <div class="auth-shell">
   <div class="auth-panel">
     <a class="auth-back" href="{{ url_for('index_view') }}">← Home</a>
-    <div class="brand-wordmark">FastStarter</div>
+    <div class="brand-wordmark"><span class="wm-my">My</span><span class="wm-advisor">Advisor</span></div>
     <p class="auth-tagline">Sign in to continue</p>
 
     <form method="POST" action="{{ url_for('login_action_ajax') }}">
+      <h1 class="auth-heading">Sign in</h1>
       <div class="mb-3">
         <label class="form-label" for="username">Username</label>
         <input class="form-control" type="text" id="username" name="username" required autofocus>

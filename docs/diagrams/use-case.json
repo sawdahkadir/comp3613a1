@@ -1,0 +1,27 @@
+{
+  "system": "MyAdvisor",
+  "actors": [
+    {"name": "Student", "side": "left"},
+    {"name": "Advisor", "side": "right"}
+  ],
+  "use_cases": [
+    {
+      "name": "Track Degree Progress",
+      "actors": ["Student"]
+    },
+    {
+      "name": "Create Semester Plan",
+      "actors": ["Student"]
+    },
+    {
+      "name": "View Semester Plan",
+      "actors": ["Advisor"],
+      "includes": ["Make Decision"]
+    },
+    {
+      "name": "Make Decision",
+      "includes": ["Notify Student"]
+    },
+    {"name": "Notify Student"}
+  ]
+}

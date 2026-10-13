@@ -1,0 +1,82 @@
+{% extends "authenticated-base.html" %}
+{% block title %}Degree Progress — MyAdvisor{% endblock %}
+
+{% block app_nav %}
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('user_home_view') }}">Dashboard</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('progress_view') }}">Degree Progress</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('plans_view') }}">Semester Plans</a>
+</li>
+{% endblock %}
+
+{% block subpage_content %}
+<a class="auth-back" href="{{ url_for('user_home_view') }}">← Back to Dashboard</a>
+
+{% if progress %}
+<h1 class="page-title">My Degree Progress</h1>
+
+<div class="progress-meter">
+    <div class="progress" role="progressbar" aria-label="Degree completion"
+        aria-valuenow="{{ progress.percentComplete }}" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar" style="width: {{ progress.percentComplete }}%"></div>
+    </div>
+    <span class="meter-label">{{ progress.percentComplete }}% complete</span>
+</div>
+
+<div class="progress-columns">
+    <dl class="progress-stack">
+        <dt>Degree</dt>
+        <dd>{{ progress.degreeName }}</dd>
+        <dt>Faculty</dt>
+        <dd>{{ progress.faculty }}</dd>
+        <dt>Academic Year</dt>
+        <dd>{{ progress.academicYear }}</dd>
+    </dl>
+
+    <dl class="progress-stack">
+        <dt>Credits Completed</dt>
+        <dd>{{ progress.creditsCompleted }} / {{ progress.creditsTotal }}</dd>
+        <dt>Credits Remaining</dt>
+        <dd>{{ progress.creditsRemaining }}</dd>
+        <dt>Courses Completed</dt>
+        <dd>{{ progress.coursesCompleted }} / {{ progress.coursesRequired }}</dd>
+    </dl>
+</div>
+
+<h2 class="page-title">Completed Courses</h2>
+<div class="app-card">
+    <div class="course-table-wrap">
+        <table class="table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Course Code</th>
+                    <th scope="col">Course Title</th>
+                    <th scope="col" class="text-end">Credits</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in progress.completedCourses %}
+                <tr>
+                    <td>{{ course.code }}</td>
+                    <td>{{ course.courseName }}</td>
+                    <td class="text-end">{{ course.credits }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<h1 class="page-title">My Degree Progress</h1>
+<div class="app-card">
+    <div class="card-body">
+        <p class="mb-0">No degree is linked to this account yet. Ask your department to enrol you in a
+            degree programme.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

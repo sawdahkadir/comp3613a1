@@ -5,7 +5,7 @@
 {% block internal_css %}
 <style>
     body {
-        background-color: #f8f9fa;
+        background-color: var(--brand-bg);
     }
 
     .page-container {
@@ -13,18 +13,24 @@
     }
 
     .card-custom {
-        border: none;
+        border: 1px solid var(--brand-border);
         border-radius: 1rem;
         overflow: hidden;
     }
 
     .left-section {
-        background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+        background:
+            radial-gradient(ellipse at top left, rgba(165, 140, 224, 0.45), transparent 60%),
+            var(--brand-navy);
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         padding: 3rem;
+    }
+
+    .left-section h2 {
+        color: #fff;
     }
 
     .left-section img {
@@ -58,8 +64,8 @@
 
             <div class="col-lg-6 bg-white">
                 <div class="right-section d-flex flex-column justify-content-center h-100">
-                    <h1 class="display-5 fw-bold text-danger mb-3">401</h1>
-                    <h3 class="fw-semibold mb-3">Unauthorized</h3>
+                    <h1 class="h1 text-danger mb-3">401</h1>
+                    <h3 class="mb-3">Unauthorized</h3>
                     <p class="text-muted mb-4">
                         Your session has expired or you do not have permission to access this page.
                         Please log in again to continue.

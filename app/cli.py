@@ -46,6 +46,233 @@ def cmd_init(args: argparse.Namespace) -> None:
         cmd_seed(args)
 
 
+def _seed_myadvisor() -> None:
+    """Insert the MyAdvisor demo catalogue: degree, courses, profiles, transcript."""
+    from app.database import get_cli_session
+
+    with get_cli_session() as session:
+        _seed_myadvisor_data(session)
+
+
+def _seed_myadvisor_data(session) -> None:
+    from app.models.planning import SemesterPlan
+    from app.models.progress import Advisor, Course, Degree, Student
+    from app.models.review import Notification
+    from app.repositories.planning import PlanningRepository
+    from app.repositories.progress import ProgressRepository
+    from app.repositories.review import ReviewRepository
+    from app.repositories.user import UserRepository
+
+    repo = ProgressRepository(session)
+    planning_repo = PlanningRepository(session)
+    review_repo = ReviewRepository(session)
+
+    degree = repo.get_degree_by_name("BSc Computer Science")
+    if degree is None:
+        degree = repo.create_degree(
+            Degree(
+                degreeName="BSc Computer Science",
+                faculty="Science and Technology",
+                totalCredits=120,
+            )
+        )
+        print("  create degree BSc Computer Science")
+
+    # (code, title, credits) — the catalogue the demo student draws plans from.
+    catalogue = [
+        ("COMP6021", "Software Programming I", 3),
+        ("COMP6026", "Operating Systems", 3),
+        ("INF08208", "Programming and Technologies I", 3),
+        ("COMP6031", "Human-Computer Interaction", 3),
+        ("COMP6033", "Object-Oriented Programming II", 3),
+        ("COMP6083", "Software Engineering II", 3),
+        ("COMP4995", "Applied Mathematics for Scientific Computing", 3),
+        ("INF08206", "Information System Security", 3),
+        ("COMP6032", "Data Structures and Algorithms", 4),
+        ("COMP6034", "Software Engineering I", 3),
+        ("COMP6035", "Computer Networks", 3),
+        ("COMP6036", "Database Systems", 4),
+        ("COMP6037", "Artificial Intelligence", 3),
+        ("COMP6038", "Software Quality Assurance", 3),
+        ("COMP6039", "Web and Mobile Systems", 3),
+        ("COMP6040", "Formal Methods", 4),
+        ("COMP6041", "Computer Graphics", 3),
+        ("COMP6042", "Compilers", 4),
+        ("COMP6043", "Computer Networks II", 3),
+        ("COMP6044", "Operating Systems II", 3),
+        ("COMP6045", "Software Architecture", 3),
+        ("COMP6046", "Machine Learning", 4),
+        ("COMP6047", "Cryptography", 3),
+        ("INF08207", "Programming and Technologies II", 3),
+        ("INF08205", "Information Systems Analysis", 4),
+        ("INF08204", "Database Design", 3),
+        ("INF08203", "Software Project Management", 3),
+        ("INF08202", "Professional Practice", 3),
+        ("INF08201", "Discrete Mathematics", 4),
+        ("COMP6048", "Mobile Application Development", 3),
+        ("COMP6049", "Parallel and Distributed Systems", 3),
+    ]
+    courses = {}
+    for code, title, credits in catalogue:
+        course = repo.get_course_by_code(code)
+        if course is None:
+            course = repo.create_course(Course(code=code, courseName=title, credits=credits))
+        courses[code] = course
+        repo.require_course(degree.id, course.id)
+
+    # bob's transcript: 18 completed courses worth 59 credits.
+    completed = [
+        "COMP6021", "COMP6026", "INF08208", "COMP6033", "COMP6083",
+        "COMP6034", "COMP6035", "COMP6038", "COMP6041", "COMP6043",
+        "COMP6044", "INF08204", "INF08203",
+        "COMP6032", "COMP6036", "COMP6040", "COMP6046", "INF08205",
+    ]
+    outcomes = {code: "completed" for code in completed}
+    outcomes["COMP6039"] = "in_progress"
+    outcomes["INF08201"] = "failed"
+
+    advisor = repo.get_advisor_by_name("Dr. Hosain")
+    if advisor is None:
+        admin_user = UserRepository(session).get_by_username("admin")
+        advisor = repo.create_advisor(
+            Advisor(
+                userID=admin_user.id if admin_user else None,
+                name="Dr. Hosain",
+                faculty="Science and Technology",
+            )
+        )
+        print("  create advisor Dr. Hosain")
+
+    student = repo.get_student_by_name("Bob")
+    if student is None:
+        bob_user = UserRepository(session).get_by_username("bob")
+        student = repo.create_student(
+            Student(
+                userID=bob_user.id if bob_user else None,
+                studentNumber="349836161",
+                name="Bob",
+                currentAcademicYear="2026-2027",
+                degreeID=degree.id,
+                advisorID=advisor.id,
+            )
+        )
+        print("  create student Bob")
+
+    for code, status in outcomes.items():
+        repo.record_transcript(student.id, courses[code].id, status)
+
+    # Prerequisites — later courses depend on earlier ones, so selecting one
+    # without the other completed is refused by the planning service.
+    #
+    # INF08206 is gated on INF08201, which Bob failed rather than completed.
+    # That is the only course in his seeded rejected plan that the rule can
+    # catch, which is what makes its "Prerequisite not completed" feedback
+    # truthful. INF08207 and COMP6047 chain behind INF08206, and COMP6045
+    # behind COMP6037 — three more courses Bob is blocked from.
+    prerequisites = [
+        ("COMP6031", "COMP6021"),
+        ("COMP6033", "COMP6032"),
+        ("COMP6034", "COMP6021"),
+        ("COMP6036", "COMP6032"),
+        ("COMP6040", "COMP6032"),
+        ("COMP6041", "COMP6032"),
+        ("COMP6042", "COMP6033"),
+        ("COMP6044", "COMP6026"),
+        ("COMP6046", "COMP6032"),
+        ("COMP6049", "COMP6043"),
+        ("INF08207", "INF08208"),
+        ("INF08206", "INF08201"),
+        ("INF08207", "INF08206"),
+        ("COMP6047", "INF08206"),
+        ("COMP6045", "COMP6037"),
+    ]
+    for course_code, prereq_code in prerequisites:
+        planning_repo.add_prerequisite(courses[course_code].id, courses[prereq_code].id)
+
+    # Bob's existing plans, matching the states the wireframe shows.
+    existing_plans = [
+        ("1", "2025/2026", "submitted", ["COMP6031", "COMP6026"], {}),
+        (
+            "2",
+            "2026/2027",
+            "rejected",
+            ["COMP6031", "COMP6026", "INF08206", "COMP6033", "INF08208"],
+            {"INF08206": ("rejected", "Prerequisite not completed")},
+        ),
+        ("1", "2024/2025", "approved", ["COMP6032", "COMP6034"], {}),
+        ("2", "2024/2025", "approved", ["COMP6036", "COMP6040"], {}),
+    ]
+    for semester, academic_year, plan_status, codes, decisions in existing_plans:
+        plan = planning_repo.find_plan(student.id, semester, academic_year)
+        if plan is None:
+            plan = planning_repo.create_plan(
+                SemesterPlan(
+                    studentID=student.id,
+                    semester=semester,
+                    academicYear=academic_year,
+                    status=plan_status,
+                ),
+                [courses[code].id for code in codes],
+            )
+            for code, (decision, feedback) in decisions.items():
+                planning_repo.set_course_decision(plan.id, courses[code].id, decision, feedback)
+        else:
+            planning_repo.set_plan_status(plan.id, plan_status)
+
+    # Other advisees of Dr. Hosain, so the advisor's Pending and Reviewed tabs
+    # are not just one student's plan. These carry plans only — no transcript,
+    # so the advisor screens have realistic volume without touching Bob's data.
+    other_students = [
+        ("326249340", "Priya Williams", "1", "2026/2027", "submitted", ["COMP6031", "COMP6033"]),
+        ("852495128", "Lucy Roberts", "1", "2026/2027", "submitted", ["COMP6041", "COMP6038"]),
+        ("960500621", "Brian Thomas", "2", "2026/2027", "submitted", ["INF08207", "COMP6049"]),
+        ("741852963", "Amara Lewis", "2", "2025/2026", "approved", ["COMP6042", "COMP6047"]),
+        ("552014770", "Devon Clarke", "1", "2025/2026", "rejected", ["COMP6045", "COMP6048"]),
+    ]
+    for number, full_name, semester, academic_year, plan_status, codes in other_students:
+        peer = repo.get_student_by_name(full_name)
+        if peer is None:
+            peer = repo.create_student(
+                Student(
+                    studentNumber=number,
+                    name=full_name,
+                    currentAcademicYear="2026-2027",
+                    degreeID=degree.id,
+                    advisorID=advisor.id,
+                )
+            )
+        if planning_repo.find_plan(peer.id, semester, academic_year) is None:
+            planning_repo.create_plan(
+                SemesterPlan(
+                    studentID=peer.id,
+                    semester=semester,
+                    academicYear=academic_year,
+                    status=plan_status,
+                ),
+                [courses[code].id for code in codes],
+            )
+
+    # Notifications for the advisor, as drawn on their dashboard.
+    for peer_name, message in [
+        ("Priya Williams", "Priya Williams submitted their Semester Plan."),
+        ("Lucy Roberts", "Lucy Roberts submitted their Semester Plan."),
+        ("Brian Thomas", "Brian Thomas submitted their Semester Plan."),
+    ]:
+        if review_repo.list_notifications_for_advisor(advisor.id):
+            break
+        peer = repo.get_student_by_name(peer_name)
+        review_repo.add_notification(
+            Notification(advisorID=advisor.id, message=message)
+        )
+
+    print(
+        f"  MyAdvisor demo data ready — {len(catalogue)} courses required, "
+        f"{len(completed)} completed ({sum(c[2] for c in catalogue if c[0] in completed)} credits), "
+        f"{len(existing_plans) + len(other_students)} semester plans, "
+        f"{len(other_students) + 1} students"
+    )
+
+
 def cmd_seed(args: argparse.Namespace) -> None:
     """Insert demo users.
 
@@ -87,7 +314,8 @@ def cmd_seed(args: argparse.Namespace) -> None:
             created += 1
 
     print(f"Seed done — created {created}, skipped {skipped}.")
-    print("Login with bob/bobpass or admin/adminpass")
+    _seed_myadvisor()
+    print("Login with bob/bobpass (student) or admin/adminpass (advisor)")
 
 
 def cmd_run(args: argparse.Namespace) -> None:

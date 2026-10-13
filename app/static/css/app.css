@@ -1,17 +1,38 @@
 :root {
-  /* Phase 5 theming: Guide overwrites these from docs/report.md preferences */
-  --brand-name: "FastStarter";
-  --brand-bg: #0c1218;
-  --brand-surface: #f7f4ef;
-  --brand-ink: #14202b;
-  --brand-muted: #6a7a88;
-  --brand-accent: #c45c26;
-  --brand-accent-2: #2a6f6b;
-  --brand-sidebar: #14202b;
-  --brand-sidebar-text: #a8b4bf;
-  --brand-font-display: "Fraunces", Georgia, serif;
-  --brand-font-body: "Source Sans 3", "Segoe UI", sans-serif;
-  --brand-radius: 0.85rem;
+  /* Phase 5 theming — MyAdvisor (docs/report.md → Theming) */
+  --brand-name: "MyAdvisor";
+  --brand-bg: #f7f6fb;          /* off white */
+  --brand-surface: #ffffff;     /* white */
+  --brand-ink: #1b2a4a;         /* navy blue — body text */
+  --brand-navy: #1b2a4a;
+  --brand-navy-deep: #12203c;
+  --brand-muted: #5c6a85;
+  --brand-accent: #a58ce0;      /* lilac */
+  --brand-lilac: #a58ce0;
+  --brand-accent-2: #6f56b3;    /* lilac, darker for text on light */
+  --brand-accent-soft: #ede9fb;
+  --brand-primary: #33528c;     /* muted navy-blue for interactive buttons */
+  --brand-primary-hover: #2a4580;
+  --brand-sidebar: #1b2a4a;
+  --brand-sidebar-deep: #12203c;
+  --brand-sidebar-text: #b7c1d6;
+  --brand-border: #dcd7ea;
+  --brand-shadow: 0 12px 32px rgba(27, 42, 74, 0.10);
+  --brand-font-display: "Nunito", "Segoe UI", sans-serif;
+  --brand-font-body: "DM Sans", "Segoe UI", sans-serif;
+  --brand-radius: 0.7rem;
+
+  /* Status palette (wireframe badges) */
+  --status-approved: #1f7a4d;
+  --status-approved-bg: #dcf3e6;
+  --status-rejected: #b02a24;
+  --status-rejected-bg: #fbe2e0;
+  --status-submitted: #8a6100;
+  --status-submitted-bg: #fdf0cd;
+  --status-draft: #1f5f8b;
+  --status-draft-bg: #dcebf7;
+  --status-pending: #5a4a8f;
+  --status-pending-bg: #ede9fb;
 }
 
 *,
@@ -23,14 +44,65 @@
 body {
   margin: 0;
   font-family: var(--brand-font-body);
+  font-size: 1rem;
+  line-height: 1.55;
   color: var(--brand-ink);
   background: var(--brand-bg);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
-.brand-wordmark {
+img,
+svg,
+table {
+  max-width: 100%;
+}
+
+/* Headings: Nunito, only slightly larger than regular text. */
+h1, h2, h3, h4, h5, h6,
+.brand-wordmark,
+.h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: var(--brand-font-display);
-  font-weight: 650;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: var(--brand-navy);
+  letter-spacing: -0.01em;
+}
+
+h1, .h1 { font-size: 1.95rem; line-height: 1.2; margin: 0 0 0.75rem; }
+h2, .h2 { font-size: 1.55rem; line-height: 1.25; margin: 0 0 0.6rem; }
+h3, .h3 { font-size: 1.28rem; line-height: 1.3; margin: 0 0 0.5rem; }
+h4, .h4 { font-size: 1.12rem; line-height: 1.35; margin: 0 0 0.45rem; }
+h5, .h5 { font-size: 1.02rem; margin: 0 0 0.4rem; }
+h6, .h6 { font-size: 0.95rem; margin: 0 0 0.35rem; }
+
+/* —— Wordmark: "My" in navy, "Advisor" in lilac —— */
+.brand-wordmark {
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+
+.brand-wordmark .wm-my {
+  color: var(--brand-navy);
+}
+
+.brand-wordmark .wm-advisor {
+  background-image: linear-gradient(100deg, var(--brand-lilac) 0%, var(--brand-accent-2) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--brand-lilac);
+  /* The gradient clip box ends at the glyph edge, which shaves the last
+     letter at large sizes. Pad the box out, then pull the layout back. */
+  padding-right: 0.14em;
+  margin-right: -0.14em;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .brand-wordmark .wm-advisor {
+    -webkit-text-fill-color: var(--brand-accent-2);
+    color: var(--brand-accent-2);
+  }
 }
 
 /* —— Public landing —— */
@@ -38,12 +110,11 @@ body {
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  color: var(--brand-surface);
+  color: var(--brand-ink);
   background:
-    linear-gradient(160deg, rgba(12, 18, 24, 0.55), rgba(12, 18, 24, 0.82)),
-    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(42, 111, 107, 0.45), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 90% 80%, rgba(196, 92, 38, 0.28), transparent 50%),
-    linear-gradient(180deg, #1a2834 0%, #0c1218 100%);
+    radial-gradient(ellipse 70% 50% at 88% 12%, rgba(165, 140, 224, 0.30), transparent 60%),
+    radial-gradient(ellipse 60% 45% at 6% 88%, rgba(27, 42, 74, 0.10), transparent 60%),
+    var(--brand-offwhite, var(--brand-bg));
   position: relative;
   overflow: hidden;
 }
@@ -57,8 +128,8 @@ body {
       -18deg,
       transparent,
       transparent 48px,
-      rgba(247, 244, 239, 0.025) 48px,
-      rgba(247, 244, 239, 0.025) 49px
+      rgba(27, 42, 74, 0.02) 48px,
+      rgba(27, 42, 74, 0.02) 49px
     );
   pointer-events: none;
 }
@@ -74,12 +145,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   padding: 1.25rem clamp(1.25rem, 4vw, 3rem);
 }
 
 .landing-nav .brand-wordmark {
-  font-size: clamp(1.4rem, 2.5vw, 1.85rem);
-  color: var(--brand-surface);
+  font-size: clamp(1.6rem, 2.8vw, 2.05rem);
   text-decoration: none;
 }
 
@@ -94,30 +165,29 @@ body {
   flex-direction: column;
   justify-content: center;
   padding: clamp(2rem, 8vh, 5rem) clamp(1.25rem, 4vw, 3rem) 3rem;
-  max-width: 42rem;
+  max-width: 44rem;
 }
 
 .landing-kicker {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: color-mix(in srgb, var(--brand-surface) 65%, var(--brand-accent-2));
+  color: var(--brand-accent-2);
   margin: 0 0 1rem;
 }
 
 .landing-hero .brand-wordmark {
-  font-size: clamp(3rem, 9vw, 5.5rem);
-  line-height: 0.95;
+  font-size: clamp(3rem, 9vw, 5rem);
+  line-height: 1;
   margin: 0 0 1.25rem;
-  color: var(--brand-surface);
 }
 
 .landing-lead {
-  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
-  line-height: 1.55;
-  color: color-mix(in srgb, var(--brand-surface) 78%, transparent);
+  font-size: clamp(1.05rem, 2.2vw, 1.2rem);
+  line-height: 1.6;
+  color: var(--brand-muted);
   margin: 0 0 2rem;
-  max-width: 28rem;
+  max-width: 32rem;
 }
 
 .landing-cta {
@@ -130,44 +200,39 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.35rem;
+  padding: 0.7rem 1.35rem;
   border-radius: 999px;
   font-weight: 600;
   text-decoration: none;
   border: 1.5px solid transparent;
-  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-.btn-landing:hover {
-  transform: translateY(-1px);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .btn-landing-primary {
-  background: var(--brand-accent);
-  color: #fff8f3;
+  background: var(--brand-primary);
+  color: #fff;
 }
 
 .btn-landing-primary:hover {
-  background: color-mix(in srgb, var(--brand-accent) 85%, #000);
+  background: var(--brand-primary-hover);
   color: #fff;
 }
 
 .btn-landing-ghost {
-  background: transparent;
-  color: var(--brand-surface);
-  border-color: color-mix(in srgb, var(--brand-surface) 45%, transparent);
+  background: var(--brand-surface);
+  color: var(--brand-navy);
+  border-color: var(--brand-border);
 }
 
 .btn-landing-ghost:hover {
-  border-color: var(--brand-surface);
-  background: color-mix(in srgb, var(--brand-surface) 8%, transparent);
-  color: var(--brand-surface);
+  border-color: var(--brand-lilac);
+  color: var(--brand-accent-2);
 }
 
 .landing-foot {
   padding: 1.25rem clamp(1.25rem, 4vw, 3rem) 1.75rem;
   font-size: 0.85rem;
-  color: color-mix(in srgb, var(--brand-surface) 45%, transparent);
+  color: var(--brand-muted);
 }
 
 .landing-orb {
@@ -178,10 +243,9 @@ body {
   right: -6%;
   top: 18%;
   background:
-    radial-gradient(circle at 35% 35%, rgba(247, 244, 239, 0.18), transparent 55%),
-    radial-gradient(circle at 70% 70%, rgba(42, 111, 107, 0.5), transparent 60%),
-    rgba(196, 92, 38, 0.15);
-  filter: blur(2px);
+    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.55), transparent 55%),
+    radial-gradient(circle at 70% 70%, rgba(165, 140, 224, 0.45), transparent 62%),
+    rgba(237, 233, 251, 0.8);
   animation: landing-drift 14s ease-in-out infinite alternate;
   pointer-events: none;
 }
@@ -207,12 +271,9 @@ body {
   .landing-orb-2 {
     animation: none;
   }
-  .btn-landing:hover {
-    transform: none;
-  }
 }
 
-/* —— Auth —— */
+/* —— Auth: login / register —— */
 .auth-shell {
   min-height: 100vh;
   display: flex;
@@ -220,8 +281,8 @@ body {
   justify-content: center;
   padding: 1.5rem;
   background:
-    radial-gradient(ellipse at top left, color-mix(in srgb, var(--brand-accent-2) 35%, transparent), transparent 55%),
-    radial-gradient(ellipse at bottom right, color-mix(in srgb, var(--brand-accent) 28%, transparent), transparent 50%),
+    radial-gradient(ellipse at top left, rgba(165, 140, 224, 0.28), transparent 55%),
+    radial-gradient(ellipse at bottom right, rgba(27, 42, 74, 0.12), transparent 55%),
     var(--brand-bg);
 }
 
@@ -229,15 +290,15 @@ body {
   width: min(420px, 100%);
   background: var(--brand-surface);
   color: var(--brand-ink);
+  border: 1px solid var(--brand-border);
   border-radius: var(--brand-radius);
   padding: 2rem 1.75rem;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--brand-shadow);
 }
 
 .auth-panel .brand-wordmark {
-  font-size: 1.75rem;
-  margin-bottom: 0.25rem;
-  color: var(--brand-accent);
+  font-size: 1.95rem;
+  margin-bottom: 0.2rem;
 }
 
 .auth-panel .auth-tagline {
@@ -245,19 +306,47 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.auth-panel .auth-heading {
+  font-size: 1.3rem;
+  margin-bottom: 0.15rem;
+}
+
+.auth-panel .form-label {
+  font-family: var(--brand-font-display);
+  font-weight: 600;
+  color: var(--brand-navy);
+}
+
+.auth-panel .form-control {
+  border-color: var(--brand-border);
+  border-radius: 0.5rem;
+}
+
+.auth-panel .form-control:focus {
+  border-color: var(--brand-lilac);
+  box-shadow: 0 0 0 0.2rem rgba(165, 140, 224, 0.25);
+}
+
 .auth-panel .btn-primary {
-  background: var(--brand-accent);
-  border-color: var(--brand-accent);
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  font-weight: 600;
 }
 
 .auth-panel .btn-primary:hover {
-  background: color-mix(in srgb, var(--brand-accent) 85%, #000);
-  border-color: color-mix(in srgb, var(--brand-accent) 85%, #000);
+  background: var(--brand-primary-hover);
+  border-color: var(--brand-primary-hover);
 }
 
 .auth-panel .btn-outline-secondary {
-  color: var(--brand-ink);
-  border-color: color-mix(in srgb, var(--brand-ink) 25%, transparent);
+  color: var(--brand-navy);
+  border-color: var(--brand-border);
+}
+
+.auth-panel .btn-outline-secondary:hover {
+  background: var(--brand-accent-soft);
+  color: var(--brand-accent-2);
+  border-color: var(--brand-lilac);
 }
 
 .auth-back {
@@ -269,5 +358,530 @@ body {
 }
 
 .auth-back:hover {
-  color: var(--brand-accent);
+  color: var(--brand-accent-2);
+}
+
+/* —— Screen headings: underlined rule as drawn in the wireframes —— */
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--brand-lilac);
+  margin-bottom: 1.5rem;
+}
+
+/* —— View Degree Progress —— */
+.progress-meter {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.progress-meter .progress {
+  flex: 1;
+  height: 1.1rem;
+  background-color: var(--brand-accent-soft);
+  border-radius: 999px;
+}
+
+.progress-meter .progress-bar {
+  background-color: var(--brand-lilac);
+  border-radius: 999px;
+}
+
+.progress-meter .meter-label {
+  font-family: var(--brand-font-display);
+  font-weight: 700;
+  color: var(--brand-navy);
+  white-space: nowrap;
+}
+
+.progress-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem 3rem;
+  margin-bottom: 2rem;
+}
+
+.progress-stack {
+  margin: 0;
+}
+
+.progress-stack dt {
+  font-family: var(--brand-font-display);
+  font-weight: 700;
+  color: var(--brand-muted);
+  font-size: 0.95rem;
+  margin-top: 1.1rem;
+}
+
+.progress-stack dt:first-of-type {
+  margin-top: 0;
+}
+
+.progress-stack dd {
+  margin: 0.15rem 0 0;
+  color: var(--brand-navy);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.course-table-wrap {
+  max-height: 18rem;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Tables keep a workable minimum width and scroll sideways inside their card
+   rather than crushing columns into unreadable slivers on a phone. */
+.course-table-wrap > .table {
+  min-width: 38rem;
+}
+
+.course-table-wrap.table-wide > .table {
+  min-width: 56rem;
+}
+
+/* Below the scroll threshold the Credits and Select columns can tighten up. */
+@media (max-width: 575.98px) {
+  .course-table-wrap > .table th,
+  .course-table-wrap > .table td {
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+}
+
+.course-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  background: var(--brand-accent-soft);
+  color: var(--brand-navy);
+  border-bottom: 1px solid var(--brand-border);
+  font-family: var(--brand-font-display);
+}
+
+/* Vertical rules between columns, as drawn in the wireframe tables. */
+#app-content .table > :not(caption) > * > * {
+  border-left: 1px solid var(--brand-border);
+}
+
+#app-content .table > thead > tr > th:first-child,
+#app-content .table > tbody > tr > td:first-child,
+#app-content .table > tbody > tr > th:first-child {
+  border-left: 0;
+}
+
+#app-content .table > thead > tr > th {
+  border-bottom: 2px solid var(--brand-border);
+  font-size: 0.95rem;
+}
+
+/* —— Responsive: every screen collapses to one column on small widths —— */
+@media (max-width: 575.98px) {
+  .dashboard-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .landing-cta,
+  .landing-nav-actions {
+    width: 100%;
+  }
+
+  .landing-cta .btn-landing,
+  .landing-nav-actions .btn-landing {
+    flex: 1 1 auto;
+  }
+
+  .auth-panel {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+@media (max-width: 991.98px) {
+  #app-content {
+    padding: 1.25rem 1rem 2.5rem;
+  }
+
+  #app-header #app-nav {
+    padding-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  #user-chip {
+    margin-top: 0.5rem;
+  }
+}
+
+@supports not (gap: 1rem) {
+  #app-nav .navbar-nav > li + li {
+    margin-left: 0.5rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-tiles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .dashboard-tile {
+    min-height: 0;
+    padding: 1.75rem 1.25rem;
+  }
+
+  .decision-chip {
+    flex-wrap: wrap;
+  }
+
+  /* Long course titles must wrap rather than force the row wider. */
+  .course-table-wrap > .table td {
+    white-space: normal;
+  }
+
+  .progress-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .progress-meter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  /* `flex: 1` would resolve against the column axis here and collapse the
+     bar's height to zero, so the bar opts out of flex sizing on small widths. */
+  .progress-meter .progress {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .progress-meter .meter-label {
+    text-align: right;
+  }
+
+  .page-title {
+    font-size: 1.35rem;
+  }
+
+  .table {
+    font-size: 0.9rem;
+  }
+
+  .table > :not(caption) > * > * {
+    padding: 0.4rem 0.5rem;
+  }
+}
+
+/* —— Buttons: muted navy everywhere, overriding Bootstrap's bright blue —— */
+.btn-primary {
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-border-color: var(--brand-primary);
+  --bs-btn-hover-bg: var(--brand-primary-hover);
+  --bs-btn-hover-border-color: var(--brand-primary-hover);
+  --bs-btn-active-bg: var(--brand-primary-hover);
+  --bs-btn-active-border-color: var(--brand-primary-hover);
+  --bs-btn-disabled-bg: var(--brand-primary);
+  --bs-btn-disabled-border-color: var(--brand-primary);
+  --bs-btn-focus-shadow-rgb: 51, 82, 140;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--brand-primary);
+  --bs-btn-border-color: var(--brand-border);
+  --bs-btn-hover-bg: var(--brand-accent-soft);
+  --bs-btn-hover-border-color: var(--brand-lilac);
+  --bs-btn-hover-color: var(--brand-accent-2);
+  --bs-btn-active-bg: var(--brand-accent-soft);
+  --bs-btn-active-border-color: var(--brand-lilac);
+  --bs-btn-active-color: var(--brand-accent-2);
+  --bs-btn-disabled-color: var(--brand-muted);
+  --bs-btn-disabled-border-color: var(--brand-border);
+}
+
+/* —— App shell (authenticated pages) —— */
+.app-card {
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
+  box-shadow: var(--brand-shadow);
+}
+
+.app-card .card-header {
+  background: var(--brand-accent-soft);
+  border-bottom: 1px solid var(--brand-border);
+  border-top-left-radius: var(--brand-radius);
+  border-top-right-radius: var(--brand-radius);
+}
+
+.app-card .card-header h2,
+.app-card .card-header h3 {
+  margin: 0;
+}
+
+/* —— Dashboard tiles (wireframe: two large panels under the greeting) —— */
+.dashboard-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  gap: 0.35rem;
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-top: 5px solid var(--brand-lilac);
+  border-radius: var(--brand-radius);
+  box-shadow: var(--brand-shadow);
+  padding: 2.25rem 2rem 2.25rem;
+  min-height: 16rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.dashboard-tile:hover {
+  border-top-color: var(--brand-accent-2);
+  box-shadow: 0 16px 38px rgba(111, 86, 179, 0.28);
+  transform: translateY(-2px);
+}
+
+.dashboard-tile:hover .tile-icon {
+  background: var(--brand-accent-2);
+  color: #fff;
+}
+
+.dashboard-tile .tile-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-accent-soft);
+  color: var(--brand-accent-2);
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-tile h2 {
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.dashboard-tile p {
+  color: var(--brand-muted);
+  margin: 0 0 auto;
+  max-width: 22rem;
+}
+
+.dashboard-tile .btn {
+  margin-top: 1.25rem;
+  padding: 0.55rem 1.3rem;
+  font-weight: 600;
+  align-self: center;
+}
+
+.dashboard-tile .btn-primary {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+.dashboard-tile .btn-primary:hover {
+  background: var(--brand-primary-hover);
+  border-color: var(--brand-primary-hover);
+}
+
+.dashboard-tile .btn-outline-primary {
+  color: var(--brand-navy);
+  border: 1.5px solid var(--brand-border);
+}
+
+.dashboard-tile .btn-outline-primary:hover:not(:disabled) {
+  background: var(--brand-accent-soft);
+  border-color: var(--brand-lilac);
+  color: var(--brand-accent-2);
+}
+
+.dashboard-tile .btn:disabled {
+  background: transparent;
+  border: 1.5px solid var(--brand-border);
+  color: var(--brand-muted);
+  opacity: 1;
+}
+
+/* —— Notifications panel on the dashboard —— */
+.notifications-panel {
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
+  box-shadow: var(--brand-shadow);
+}
+
+.notifications-panel .panel-title {
+  font-size: 1.25rem;
+  margin: 0;
+  padding: 1rem 1.5rem;
+  background: var(--brand-accent-soft);
+  border-bottom: 1px solid var(--brand-border);
+  border-top-left-radius: var(--brand-radius);
+  border-top-right-radius: var(--brand-radius);
+}
+
+.notifications-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 1.25rem 1.5rem 1.25rem 2.75rem;
+}
+
+.notifications-panel li {
+  padding: 0.35rem 0;
+  color: var(--brand-ink);
+  text-align: left;
+}
+
+.notifications-panel li::before {
+  content: "\2022";
+  color: var(--brand-lilac);
+  margin-right: 0.5rem;
+  font-weight: 700;
+}
+
+.notifications-panel .empty {
+  padding: 1.25rem 1.5rem;
+  color: var(--brand-muted);
+  margin: 0;
+  text-align: left;
+}
+
+/* —— Dashboard greeting (tiles stay centred, the heading does not) —— */
+.dashboard-greeting {
+  text-align: left;
+  margin-bottom: 1.75rem;
+}
+
+/* —— Status badges and decision chips —— */
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-family: var(--brand-font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.status-approved { color: var(--status-approved); background: var(--status-approved-bg); }
+.status-rejected { color: var(--status-rejected); background: var(--status-rejected-bg); }
+.status-submitted { color: var(--status-submitted); background: var(--status-submitted-bg); }
+.status-draft    { color: var(--status-draft);    background: var(--status-draft-bg); }
+.status-pending  { color: var(--status-pending);  background: var(--status-pending-bg); }
+
+/* The radio is followed by a <label> that wraps the chip <span>, so the
+   sibling selectors must step through the label to reach the span. */
+.decision-chip label {
+  cursor: pointer;
+  margin: 0;
+}
+
+.decision-chip input[type="radio"] + label span {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.25rem 0.8rem;
+  font-family: var(--brand-font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  border: 1px solid var(--brand-border);
+  color: var(--brand-muted);
+  background: var(--brand-surface);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.decision-chip input[type="radio"]:hover + label span {
+  border-color: var(--brand-lilac);
+  color: var(--brand-accent-2);
+}
+
+.decision-chip input[type="radio"]:focus-visible + label span {
+  outline: 2px solid var(--brand-lilac);
+  outline-offset: 2px;
+}
+
+.decision-chip input[type="radio"]:checked + label span.approved {
+  background: var(--status-approved-bg);
+  color: var(--status-approved);
+  border-color: var(--status-approved);
+}
+
+.decision-chip input[type="radio"]:checked + label span.rejected {
+  background: var(--status-rejected-bg);
+  color: var(--status-rejected);
+  border-color: var(--status-rejected);
+}
+
+.decision-chip input[type="radio"]:disabled + label span {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Reject Plan — the only red action in the app. */
+.btn-reject {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--status-rejected);
+  --bs-btn-border-color: var(--status-rejected);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #93211c;
+  --bs-btn-hover-border-color: #93211c;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #93211c;
+  --bs-btn-active-border-color: #93211c;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: var(--status-rejected);
+  --bs-btn-disabled-border-color: var(--status-rejected);
+}
+
+.btn-approve {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--status-approved);
+  --bs-btn-border-color: var(--status-approved);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #186440;
+  --bs-btn-hover-border-color: #186440;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #186440;
+  --bs-btn-active-border-color: #186440;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: var(--status-approved);
+  --bs-btn-disabled-border-color: var(--status-approved);
+}
+
+/* Advisor list tabs match the status badge vocabulary. */
+.nav-pills .nav-link {
+  color: var(--brand-muted);
+  font-family: var(--brand-font-display);
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.4rem 1.1rem;
+}
+
+.nav-pills .nav-link:hover {
+  background: var(--brand-accent-soft);
+  color: var(--brand-accent-2);
+}
+
+.nav-pills .nav-link.active {
+  background: var(--brand-lilac);
+  color: #fff;
 }

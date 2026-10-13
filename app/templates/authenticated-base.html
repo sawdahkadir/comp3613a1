@@ -4,57 +4,117 @@
 <style>
     body {
         overflow-x: hidden;
-        background: #f4f6f8;
+        background: var(--brand-bg);
+        color: var(--brand-ink);
     }
 
-    #wrapper {
+    #app-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 0.5rem 1rem;
+        background: var(--brand-surface);
+        border-bottom: 1px solid var(--brand-border);
+    }
+
+    #app-header .brand-wordmark {
+        font-size: 1.9rem;
+        text-decoration: none;
+    }
+
+    #app-nav {
+        grid-column: 2;
+        justify-self: center;
+    }
+
+    #app-nav .navbar-nav {
         display: flex;
-        min-height: 100vh;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    #sidebar {
-        min-width: 250px;
-        max-width: 250px;
-        min-height: 100vh;
-        transition: all 0.3s;
-        background: var(--brand-sidebar);
-        color: #fff;
-    }
-
-    #sidebar.collapsed {
-        margin-left: -250px;
-    }
-
-    #sidebar .nav-link {
-        color: var(--brand-sidebar-text);
-        font-weight: 500;
-    }
-
-    #sidebar .nav-link:hover,
-    #sidebar .nav-link.active {
-        color: #fff;
-        background-color: color-mix(in srgb, var(--brand-accent) 55%, #000);
+    #app-nav .nav-link {
+        color: var(--brand-muted);
+        font-family: var(--brand-font-display);
+        font-weight: 600;
         border-radius: 0.5rem;
+        padding: 0.45rem 1.1rem;
+        white-space: nowrap;
     }
 
-    #sidebar .brand-wordmark {
-        color: #fff;
-        font-size: 1.25rem;
-        text-align: center;
-        margin: 1rem 0 1.5rem;
+    #app-nav .nav-link:hover {
+        color: var(--brand-accent-2);
+        background: var(--brand-accent-soft);
     }
 
-    #content {
-        width: 100%;
-        padding: 1rem;
-        transition: all 0.3s;
-        display: flex;
-        flex-direction: column;
-        background-color: #f4f6f8;
+    #app-nav .nav-link.active {
+        color: var(--brand-navy);
+        background: var(--brand-accent-soft);
     }
 
-    .navbar {
-        border-bottom: 1px solid #dee2e6;
+    #user-chip {
+        grid-column: 3;
+        justify-self: end;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    #user-chip .avatar {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--brand-accent-soft);
+        color: var(--brand-accent-2);
+        font-family: var(--brand-font-display);
+        font-weight: 700;
+    }
+
+    #app-content {
+        padding: 1.5rem clamp(1rem, 3vw, 2rem) 3rem;
+        max-width: 1180px;
+    }
+
+    /* Narrow screens: wordmark and user chip share row one, tabs get their own
+       centred row underneath instead of collapsing behind a menu button. */
+    @media (max-width: 991.98px) {
+        #app-header {
+            grid-template-columns: 1fr auto;
+            row-gap: 0.35rem;
+        }
+
+        #app-header .brand-wordmark {
+            font-size: 1.55rem;
+        }
+
+        #app-nav {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            width: 100%;
+        }
+
+        #app-nav .navbar-nav {
+            width: 100%;
+            justify-content: space-evenly;
+            gap: 0.25rem;
+        }
+
+        #app-nav .nav-link {
+            padding: 0.35rem 0.6rem;
+        }
+
+        #user-chip {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        #app-content {
+            padding: 1.25rem 1rem 2.5rem;
+        }
     }
 </style>
 {% block additional_styles %}{% endblock %}
@@ -62,36 +122,28 @@
 
 {% block content %}
 <div id="wrapper">
-    <nav id="sidebar" class="p-3 d-flex flex-column vh-100">
-        <div class="brand-wordmark">FastStarter</div>
+    <nav id="app-header" class="px-3 py-2">
+        <a class="brand-wordmark" href="{{ url_for('user_home_view') }}">
+            <span class="wm-my">My</span><span class="wm-advisor">Advisor</span>
+        </a>
 
-        <ul class="nav nav-pills flex-column gap-2 flex-grow-1">
-            <li class="nav-item">
-                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/app') }}"
-                   href="{{ url_for('user_home_view') }}">
-                    <span class="material-symbols-outlined me-2">home</span>
-                    Home
-                </a>
-            </li>
-            <li class="nav-item mt-auto">
-                <a class="nav-link d-flex align-items-center text-danger" href="{{ url_for('logout') }}">
-                    <span class="material-symbols-outlined me-2">logout</span>
-                    Logout
-                </a>
-            </li>
-        </ul>
+        <div id="app-nav">
+            <ul class="navbar-nav">
+                {% block app_nav %}{% endblock %}
+            </ul>
+        </div>
+
+        <div id="user-chip">
+            <span class="avatar">{{ user.username[:1] | upper }}</span>
+            <span class="fw-semibold d-none d-sm-inline">{{ user.username }}</span>
+            <a class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+                href="{{ url_for('logout') }}" title="Sign out" aria-label="Sign out">
+                <span class="material-symbols-outlined">logout</span>
+            </a>
+        </div>
     </nav>
 
-    <div id="content">
-        <nav class="navbar navbar-expand-lg bg-white mb-4 px-3 rounded-3 shadow-sm">
-            <button class="btn btn-outline-secondary" id="menu-toggle" type="button">
-                <span class="material-symbols-outlined md-dark">menu</span>
-            </button>
-            <div class="ms-auto d-flex align-items-center gap-3">
-                <span class="fw-semibold">Welcome, {{ user.username }}</span>
-            </div>
-        </nav>
-
+    <main id="app-content">
         <div class="row">
             <div class="col-12">
                 {% for message in get_flashed_messages(request) %}
@@ -101,13 +153,7 @@
         </div>
 
         {% block subpage_content %}{% endblock %}
-    </div>
+    </main>
 </div>
-
-<script>
-    document.getElementById("menu-toggle").addEventListener("click", function () {
-        document.getElementById("sidebar").classList.toggle("collapsed");
-    });
-</script>
 {% block subpage_scripts %}{% endblock %}
 {% endblock %}

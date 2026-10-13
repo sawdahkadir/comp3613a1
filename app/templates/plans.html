@@ -1,0 +1,56 @@
+{% extends "authenticated-base.html" %}
+{% block title %}Semester Plans — MyAdvisor{% endblock %}
+
+{% block app_nav %}
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('user_home_view') }}">Dashboard</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('progress_view') }}">Degree Progress</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{{ url_for('plans_view') }}">Semester Plans</a>
+</li>
+{% endblock %}
+
+{% block subpage_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="page-title mb-0 flex-grow-1">{{ student.name if student else 'My' }}'s Semester Plans</h1>
+    <a class="btn btn-primary" href="{{ url_for('plan_create_view') }}">+ Create New Plan</a>
+</div>
+
+{% if plans %}
+<div class="app-card">
+    <div class="course-table-wrap" style="max-height: none;">
+        <table class="table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Semester</th>
+                    <th scope="col">Academic Year</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plan in plans %}
+                <tr>
+                    <td>Semester {{ plan.semester }}</td>
+                    <td>{{ plan.academicYear }}</td>
+                    <td><span class="status-badge status-{{ plan.status }}">{{ plan.status | capitalize }}</span></td>
+                    <td class="text-center">
+                        <a class="btn btn-sm btn-primary" href="{{ url_for('plan_detail_view', plan_id=plan.planID) }}">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="app-card">
+    <div class="card-body">
+        <p class="mb-0">You have no semester plans yet. Create one to send course selections to your advisor.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
