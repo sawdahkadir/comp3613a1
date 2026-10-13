@@ -496,14 +496,82 @@ note: Builds ProgressRepository + ProgressService and calls the service with the
 
 Phase 6. Public Render URL (not localhost). Markers open this to mark the three workflows.
 
-https://
+https://comp3613a1-v147.onrender.com
+
+| Resource | Setting |
+|---|---|
+| Web service | `comp3613a1-v147`, Python runtime, free plan, region **Oregon**, branch `main` |
+| Build command | `pip install -r requirements.txt` |
+| Start command | `python manage.py init --no-drop && python manage.py run --host 0.0.0.0 --port $PORT` |
+| Health check | `GET /health` → `{"ok":true}` |
+| Database | Render Postgres `faststarter-db`, free plan, region **Oregon**, PostgreSQL 16 |
+| Source | `https://github.com/sawdahkadir/comp3613a1` |
+
+Environment variables set on the web service: `DATABASE_URI` (the Postgres **internal** connection string — the password is deliberately not reproduced in this report), `SECRET_KEY` (long random value, also not reproduced), `ENV=production`, `DB_POOL_SIZE=2`, `DB_ADDITIONAL_OVERFLOW=1`. `CONFIG_PASSWORD` is left unset so the `/config` ops console stays disabled on a public URL.
+
+The pool settings are not cosmetic. `app/config.py` defaults to `db_pool_size=10` with a `max_overflow` of 10, i.e. up to 20 concurrent connections, while Render's free Postgres allows 5. Left at the defaults the app would exhaust its own database under load, so both values are pinned low through the environment.
+
+### Defect found and fixed during deployment
+
+The first deployment ran on Render's **Docker** runtime, where `Dockerfile:17` supplied its own command:
+
+```dockerfile
+CMD ["python", "manage.py", "run", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+That command never seeded. The app still booted, because `app/main.py:21` runs `ensure_db_and_tables()` in its lifespan handler and so created an empty schema — the site rendered perfectly, the login form worked, and authentication failed for every account with "Incorrect username or password". An empty `user` table is indistinguishable from wrong credentials at the login screen.
+
+The fix was to seed on container boot, in shell form so the two commands can be chained (`app/cli.py:25` — `init --no-drop` creates missing tables, then `cmd_seed` inserts the demo users and the MyAdvisor catalogue):
+
+```dockerfile
+CMD ["sh", "-c", "python manage.py init --no-drop && python manage.py run --host 0.0.0.0 --port 8000"]
+```
+
+`--no-drop` keeps every boot idempotent: existing rows are skipped, so a redeploy or a cold start can never wipe a plan or a transcript. The service was then redeployed on Render's native Python runtime, where the start command above performs the same init-and-seed step.
+
+Worth noting for the markers: the seed is what makes the three workflows demonstrable at all. It creates Bob's `Student` profile, the BSc Computer Science `Degree` with its 31 required courses, Bob's 18-course completed transcript (59 credits), Dr. Hosain as his advisor, the prerequisite/antirequisite `COURSE_RELATION` rows, and a rejected Semester 2 plan whose feedback names a genuinely unmet prerequisite. Without it, `ProgressService.get_degree_progress` returns `None` for a login with no `Student` profile and the dashboards render empty.
+
+### Second defect: Degree Progress returned HTTP 500 in production
+
+`GET /app/progress` failed on the deployed service with `TypeError: unhashable type: 'dict'` while every other page rendered normally — login, the dashboard, and the ops console all worked, which is what made it a local-only bug for most of the debugging.
+
+The route rendered its template with the deprecated positional form:
+
+```python
+templates.TemplateResponse("progress.html", {"request": request, "user": user, "progress": progress})
+```
+
+`requirements.txt` pins `fastapi[all]==0.141.1`, which resolves to **Starlette 1.7.0**. That release removed the deprecated positional signature entirely; `Jinja2Templates.TemplateResponse` is now strictly `(request, name, context, ...)`. So Python bound `request="progress.html"` and `name={"request": …, "user": …}`, and `get_template()` used that **dict** as its template-cache key — hashing a dict raises `TypeError: unhashable type: 'dict'`.
+
+Fixed to the keyword form used by every other route in the project:
+
+```python
+templates.TemplateResponse(
+    request=request,
+    name="progress.html",
+    context={"user": user, "progress": progress},
+)
+```
+
+Two things are worth recording about why this reached production at all:
+
+- **It was the only occurrence.** All sixteen `TemplateResponse` call sites in `app/routers/` were checked; the fifteen other routes already used keywords. The bug was isolated to one line, which matches the symptom precisely — one page broken, every other page fine.
+- **The local environment was lying.** The bug could not reproduce locally because the developer machine still had an older Starlette installed from an earlier `pip install`, where the positional form was merely deprecated. Render performs a clean `pip install -r requirements.txt` from `requirements.txt` and therefore ran the version the project actually pins. Rebuilding a virtual environment from the pinned requirements — `.venv` on **Python 3.12** to match `PYTHON_VERSION` and the `python:3.12-slim` base image — surfaced the version mismatch immediately and reproduced the exact failure.
+
+The general lesson: a page that only breaks on a fresh, clean install is a dependency-version problem, not a code problem, and a stale local interpreter can hide it indefinitely.
 
 ## Logins
 
 Every account a marker needs, including extra users you added. Starter accounts:
 
-- bob / bobpass — regular user
-- admin / adminpass — admin
+| Username | Password | Role | What it opens |
+|---|---|---|---|
+| `bob` | `bobpass` | Student (`regular_user`) | Student dashboard, degree progress, and the Semester Plans workflow |
+| `admin` | `adminpass` | Advisor (`admin`) | Advisor dashboard, the Pending/Reviewed plan list, and the review + decision workflow |
+
+`admin` is the advisor account: `app/routers/login.py:37` routes `role == "admin"` to the advisor home, which is where *Review Semester Plan* and *Approve/Reject Plan* live. Both accounts are created by the seed on first boot and persist in Postgres across restarts and redeploys.
+
+⚠️ Free-tier limits: the web service **sleeps after inactivity**, so wake it (open `/health`, or the landing page) and allow ~20 seconds before recording the video. Free Postgres **expires 30 days after creation**.
 
 ## YouTube URL
 

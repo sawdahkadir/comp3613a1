@@ -19,9 +19,9 @@ async def progress_view(request: Request, user: AuthDep, db: SessionDep):
     progress = service.get_degree_progress(user.id)
 
     return templates.TemplateResponse(
-        "progress.html",
-        {
-            "request": request,
+        request=request,
+        name="progress.html",
+        context={
             "user": user,
             "progress": progress,
         },
