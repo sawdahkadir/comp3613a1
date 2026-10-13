@@ -14,4 +14,6 @@ COPY ./.env.example ./
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
-CMD ["python", "manage.py", "run", "--host", "0.0.0.0", "--port", "8000"]
+# Create tables and seed the demo users before serving, so a fresh database is
+# never left empty on boot. --no-drop keeps existing rows across restarts.
+CMD ["sh", "-c", "python manage.py init --no-drop && python manage.py run --host 0.0.0.0 --port 8000"]
