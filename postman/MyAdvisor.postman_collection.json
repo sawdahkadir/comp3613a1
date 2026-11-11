@@ -1,0 +1,1197 @@
+{
+  "info": {
+    "_postman_id": "6f4c1a2e-9d3b-4e57-8a10-2b7c5d9e4f61",
+    "name": "MyAdvisor API v1",
+    "description": "Versioned JSON API for the MyAdvisor COMP3613 project.\n\nRun against a freshly seeded database:\n\n    python manage.py init\n    python manage.py run\n\nThen select the **MyAdvisor Local** environment and run the whole collection with the Collection Runner. Requests are ordered so tokens, plan IDs and course IDs are chained through environment variables.\n\nSeeded logins: bob / bobpass (student), admin / adminpass (advisor).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Auth",
+      "description": "Log in as the student and the advisor, then prove the API rejects bad or missing credentials.",
+      "item": [
+        {
+          "name": "Student Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"returns a bearer token\", () => {",
+                  "  pm.expect(body.token_type).to.eql(\"bearer\");",
+                  "  pm.expect(body.access_token).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.username).to.eql(\"bob\");",
+                  "  pm.expect(body.role).to.eql(\"regular_user\");",
+                  "});",
+                  "pm.environment.set(\"accessToken\", body.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{studentUsername}}\",\n  \"password\": \"{{studentPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "JSON login. Saves the returned Bearer token to `accessToken`."
+          }
+        },
+        {
+          "name": "Advisor Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"returns an admin token\", () => {",
+                  "  pm.expect(body.access_token).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.role).to.eql(\"admin\");",
+                  "});",
+                  "pm.environment.set(\"advisorToken\", body.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{advisorUsername}}\",\n  \"password\": \"{{advisorPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Logs in the advisor account. Saves the token to `advisorToken`."
+          }
+        },
+        {
+          "name": "Invalid Login (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"explains the failure\", () => {",
+                  "  pm.expect(pm.response.json().detail).to.include(\"Incorrect username or password\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{studentUsername}}\",\n  \"password\": \"definitely-wrong\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Failure case: a bad password must return 401 JSON, not an HTML page."
+          }
+        },
+        {
+          "name": "No Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"returns a JSON error body\", () => {",
+                  "  pm.expect(pm.response.json()).to.have.property(\"detail\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Failure case: protected endpoint with no Authorization header."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Student Workflows",
+      "description": "Degree progress, course catalogue, and the full semester-plan lifecycle (create, read, update, submit) including rule failures.",
+      "item": [
+        {
+          "name": "Get Degree Progress",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"returns degree totals\", () => {",
+                  "  pm.expect(body.creditsTotal).to.be.above(0);",
+                  "  pm.expect(body.creditsCompleted).to.be.at.least(0);",
+                  "  pm.expect(body.percentComplete).to.be.a(\"number\");",
+                  "});",
+                  "pm.test(\"lists completed courses\", () => {",
+                  "  pm.expect(body.completedCourses).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/me/progress",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "me",
+                "progress"
+              ]
+            },
+            "description": "Workflow 1: view degree progress as the signed-in student."
+          }
+        },
+        {
+          "name": "Get Course Catalogue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const courses = pm.response.json();",
+                  "pm.test(\"returns the seeded catalogue\", () => {",
+                  "  pm.expect(courses).to.be.an(\"array\").with.length.above(0);",
+                  "});",
+                  "const byCode = {};",
+                  "courses.forEach(course => { byCode[course.code] = course.courseID; });",
+                  "pm.test(\"seeded course codes are present\", () => {",
+                  "  pm.expect(byCode).to.have.property(\"COMP6039\");",
+                  "  pm.expect(byCode).to.have.property(\"COMP6048\");",
+                  "  pm.expect(byCode).to.have.property(\"COMP6045\");",
+                  "});",
+                  "pm.environment.set(\"courseId\", byCode.COMP6039);",
+                  "pm.environment.set(\"courseIdB\", byCode.COMP6048);",
+                  "pm.environment.set(\"blockedCourseId\", byCode.COMP6045);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "courses"
+              ]
+            },
+            "description": "Returns every course with an `alreadyCompleted` flag. Saves real IDs for the plan requests:\n- `courseId` = COMP6039\n- `courseIdB` = COMP6048\n- `blockedCourseId` = COMP6045 (prerequisite COMP6037 not completed)."
+          }
+        },
+        {
+          "name": "List My Plans",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"returns an array of plans\", () => {",
+                  "  pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans"
+              ]
+            },
+            "description": "Lists only the signed-in student's plans."
+          }
+        },
+        {
+          "name": "Create Empty Plan (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"explains the rule\", () => {",
+                  "  pm.expect(pm.response.json().detail.toLowerCase()).to.include(\"at least one course\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"semester\": \"2\",\n  \"academicYear\": \"2023/2024\",\n  \"courseIDs\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans"
+              ]
+            },
+            "description": "Failure case: an empty plan is refused before anything is written."
+          }
+        },
+        {
+          "name": "Create Plan With Unmet Prerequisite (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"names the blocking prerequisite\", () => {",
+                  "  const detail = pm.response.json().detail;",
+                  "  pm.expect(detail.toLowerCase()).to.include(\"prerequisite\");",
+                  "  pm.expect(detail).to.include(\"COMP6037\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"semester\": \"2\",\n  \"academicYear\": \"2023/2024\",\n  \"courseIDs\": [{{blockedCourseId}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans"
+              ]
+            },
+            "description": "Failure case: COMP6045 requires COMP6037, which Bob has not completed."
+          }
+        },
+        {
+          "name": "Create Plan A (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"plan starts as a draft\", () => {",
+                  "  pm.expect(body.status).to.eql(\"draft\");",
+                  "  pm.expect(body.semester).to.eql(\"3\");",
+                  "  pm.expect(body.academicYear).to.eql(\"2026/2027\");",
+                  "  pm.expect(body.courses).to.have.lengthOf(1);",
+                  "});",
+                  "pm.test(\"Location header points at the new plan\", () => {",
+                  "  pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/plans/\" + body.planID);",
+                  "});",
+                  "pm.environment.set(\"planId\", body.planID);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"semester\": \"3\",\n  \"academicYear\": \"2026/2027\",\n  \"courseIDs\": [{{courseId}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans"
+              ]
+            },
+            "description": "Creates a draft for Semester 3 of 2026/2027 with COMP6039. Saves the new plan to `planId`."
+          }
+        },
+        {
+          "name": "Create Duplicate Term (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"reports the duplicate term\", () => {",
+                  "  pm.expect(pm.response.json().detail.toLowerCase()).to.include(\"already have a plan\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"semester\": \"3\",\n  \"academicYear\": \"2026/2027\",\n  \"courseIDs\": [{{courseId}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans"
+              ]
+            },
+            "description": "Failure case: one plan per student per term."
+          }
+        },
+        {
+          "name": "Get Plan A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"returns the requested plan\", () => {",
+                  "  pm.expect(body.planID).to.eql(Number(pm.environment.get(\"planId\")));",
+                  "  pm.expect(body.courses).to.have.lengthOf(1);",
+                  "  pm.expect(body.courses[0].code).to.eql(\"COMP6039\");",
+                  "  pm.expect(body.canEdit).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans/{{planId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans",
+                "{{planId}}"
+              ]
+            },
+            "description": "Reads the plan detail, including each course's decision and feedback."
+          }
+        },
+        {
+          "name": "Update Plan A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"replaces the course list\", () => {",
+                  "  pm.expect(body.courses).to.have.lengthOf(1);",
+                  "  pm.expect(body.courses[0].code).to.eql(\"COMP6048\");",
+                  "  pm.expect(body.status).to.eql(\"draft\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseIDs\": [{{courseIdB}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans/{{planId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans",
+                "{{planId}}"
+              ]
+            },
+            "description": "Edits a draft plan, swapping COMP6039 for COMP6048."
+          }
+        },
+        {
+          "name": "Submit Plan A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"plan is submitted for review\", () => {",
+                  "  pm.expect(pm.response.json().status).to.eql(\"submitted\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans/{{planId}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans",
+                "{{planId}}",
+                "submit"
+              ]
+            },
+            "description": "Sends the draft to the advisor."
+          }
+        },
+        {
+          "name": "Update Submitted Plan (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"explains the state rule\", () => {",
+                  "  pm.expect(pm.response.json().detail.toLowerCase()).to.include(\"only a draft or a rejected plan\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseIDs\": [{{courseId}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans/{{planId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans",
+                "{{planId}}"
+              ]
+            },
+            "description": "Failure case: a submitted plan can no longer be edited."
+          }
+        },
+        {
+          "name": "Create Plan B (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"plan starts as a draft\", () => {",
+                  "  pm.expect(body.status).to.eql(\"draft\");",
+                  "  pm.expect(body.semester).to.eql(\"1\");",
+                  "  pm.expect(body.academicYear).to.eql(\"2026/2027\");",
+                  "});",
+                  "pm.environment.set(\"planIdB\", body.planID);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"semester\": \"1\",\n  \"academicYear\": \"2026/2027\",\n  \"courseIDs\": [{{courseIdB}}]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans"
+              ]
+            },
+            "description": "Creates a second draft for Semester 1 of 2026/2027. Saves it to `planIdB`."
+          }
+        },
+        {
+          "name": "Submit Plan B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"plan is submitted for review\", () => {",
+                  "  pm.expect(pm.response.json().status).to.eql(\"submitted\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/plans/{{planIdB}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "plans",
+                "{{planIdB}}",
+                "submit"
+              ]
+            },
+            "description": "Sends the second draft to the advisor."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Advisor Workflows",
+      "description": "The advisor queue, review screen, approve/reject decisions, and authorization failures. Each advisor request uses `{{advisorToken}}`.",
+      "item": [
+        {
+          "name": "List Pending Plans",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json();",
+                  "pm.test(\"returns assigned submitted plans\", () => {",
+                  "  pm.expect(rows).to.be.an(\"array\");",
+                  "  const ids = rows.map(row => row.planID);",
+                  "  pm.expect(ids).to.include(Number(pm.environment.get(\"planId\")));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{advisorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/advisor/plans?status=pending",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "advisor",
+                "plans"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            },
+            "description": "Workflow 5: the advisor sees submitted plans for their own advisees."
+          }
+        },
+        {
+          "name": "Review Plan A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"plan is ready for review\", () => {",
+                  "  pm.expect(body.planID).to.eql(Number(pm.environment.get(\"planId\")));",
+                  "  pm.expect(body.status).to.eql(\"submitted\");",
+                  "  pm.expect(body.canReview).to.eql(true);",
+                  "  pm.expect(body.courses).to.have.length.above(0);",
+                  "});",
+                  "pm.environment.set(\"reviewCourseA\", body.courses[0].courseID);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{advisorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/advisor/plans/{{planId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "advisor",
+                "plans",
+                "{{planId}}"
+              ]
+            },
+            "description": "Review screen data for Plan A. Saves the first course ID to `reviewCourseA`."
+          }
+        },
+        {
+          "name": "Approve Plan A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"plan is approved\", () => {",
+                  "  pm.expect(body.status).to.eql(\"approved\");",
+                  "  pm.expect(body.courses[0].decision).to.eql(\"approved\");",
+                  "  pm.expect(body.courses[0].feedback).to.eql(\"Approved by Postman.\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{advisorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"approve\",\n  \"planFeedback\": \"Approved for this term.\",\n  \"courses\": [\n    {\n      \"courseID\": {{reviewCourseA}},\n      \"decision\": \"approved\",\n      \"feedback\": \"Approved by Postman.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/advisor/plans/{{planId}}/decision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "advisor",
+                "plans",
+                "{{planId}}",
+                "decision"
+              ]
+            },
+            "description": "Approves Plan A and notifies the student."
+          }
+        },
+        {
+          "name": "Review Plan B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"plan is ready for review\", () => {",
+                  "  pm.expect(body.planID).to.eql(Number(pm.environment.get(\"planIdB\")));",
+                  "  pm.expect(body.canReview).to.eql(true);",
+                  "});",
+                  "pm.environment.set(\"reviewCourseB\", body.courses[0].courseID);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{advisorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/advisor/plans/{{planIdB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "advisor",
+                "plans",
+                "{{planIdB}}"
+              ]
+            },
+            "description": "Review screen data for Plan B. Saves the first course ID to `reviewCourseB`."
+          }
+        },
+        {
+          "name": "Reject Plan B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"plan is rejected with feedback\", () => {",
+                  "  pm.expect(body.status).to.eql(\"rejected\");",
+                  "  pm.expect(body.courses[0].decision).to.eql(\"rejected\");",
+                  "  pm.expect(body.courses[0].feedback).to.eql(\"Pick a different course.\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{advisorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"reject\",\n  \"planFeedback\": \"Please revise your selection.\",\n  \"courses\": [\n    {\n      \"courseID\": {{reviewCourseB}},\n      \"decision\": \"rejected\",\n      \"feedback\": \"Pick a different course.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/advisor/plans/{{planIdB}}/decision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "advisor",
+                "plans",
+                "{{planIdB}}",
+                "decision"
+              ]
+            },
+            "description": "Rejects Plan B and notifies the student."
+          }
+        },
+        {
+          "name": "Approve Plan A Again (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"reports the reviewed state\", () => {",
+                  "  pm.expect(pm.response.json().detail.toLowerCase()).to.include(\"already been reviewed\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{advisorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"approve\",\n  \"planFeedback\": \"Trying twice.\",\n  \"courses\": [\n    {\n      \"courseID\": {{reviewCourseA}},\n      \"decision\": \"approved\",\n      \"feedback\": \"\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/advisor/plans/{{planId}}/decision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "advisor",
+                "plans",
+                "{{planId}}",
+                "decision"
+              ]
+            },
+            "description": "Failure case: a plan can only be reviewed once while it is submitted."
+          }
+        },
+        {
+          "name": "Student Token Cannot Access Advisor (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"explains the role rule\", () => {",
+                  "  pm.expect(pm.response.json().detail.toLowerCase()).to.include(\"advisor\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/advisor/plans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "advisor",
+                "plans"
+              ]
+            },
+            "description": "Failure case: a student token must not reach advisor routes."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ]
+}

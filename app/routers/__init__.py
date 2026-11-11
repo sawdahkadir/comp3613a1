@@ -15,3 +15,4 @@ router = APIRouter(tags=["Jinja Based Endpoints"], include_in_schema=get_setting
 api_router = APIRouter(tags=["API Endpoints"], prefix="/api")
 
 from . import (index, login, register, admin_home, user_home, progress, planning, review, logout, server_config)
+from . import api_auth, api_student, api_advisor
